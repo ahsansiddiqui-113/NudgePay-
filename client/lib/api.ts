@@ -1,4 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// Same-origin in production (Vercel routes /api/* to the Express service). Set for local dev.
+const BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string) {

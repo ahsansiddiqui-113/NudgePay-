@@ -1,0 +1,13 @@
+{
+  "services": {
+    "client": { "root": "client/", "framework": "nextjs" },
+    "server": { "root": "server/", "framework": "express", "entrypoint": "src/server.js" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "server" } },
+    { "source": "/(.*)", "destination": { "service": "client" } }
+  ],
+  "schedules": {
+    "nudge-daily": { "schedule": "0 9 * * *", "path": "/api/cron/nudges", "requestMethod": "GET" }
+  }
+}

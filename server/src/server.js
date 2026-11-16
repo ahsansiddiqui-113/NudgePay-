@@ -23,7 +23,15 @@ app.use('/api/webhooks', webhookRoutes);
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// Vercel Cron (GET, Authorization: Bearer $CRON_SECRET) replaces node-cron in serverless.
+app.get('/api/cron/nudges', async (req, res) => {
+  if (!process.env.CRON_SECRET || req.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  res.json({ sent: await runNudges() });
+});
 app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 }));
 app.use('/api/auth/signup', rateLimit({ windowMs: 60 * 60 * 1000, limit: 20 }));
 app.use('/api/auth', authRoutes);
@@ -39,8 +47,14 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`[api] listening on :${port}`);
-  if (process.env.RUN_WORKER !== 'false') startNudgeWorker();
-});
+// On Vercel the app is exported and invoked per request; the daily job runs via /api/cron/nudges.
+// Locally / on a long-running host, listen and start node-cron.
+if (require.main === module) {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => {
+    console.log(`[api] listening on :${port}`);
+    if (process.env.RUN_WORKER !== 'false') startNudgeWorker();
+  });
+}
+
+module.exports = app;

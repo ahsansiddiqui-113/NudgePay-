@@ -6,7 +6,7 @@ types.setTypeParser(1082, (v) => v);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10,
+  max: process.env.VERCEL ? 3 : 10, // small pool per serverless instance
   idleTimeoutMillis: 30000,
 });
 
